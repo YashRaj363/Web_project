@@ -1,6 +1,7 @@
 const bcrypt=reqire("bcrypt");
 const User=require("../models/User");
 const OTP=require("../models/OTP");
+const Profile=require("../models/Profile");
 
 
 //sendotp
@@ -51,8 +52,32 @@ exports.sendOTP=async(req,res)=>{
 
 //signup
 exports.signup=async(req,res)=>{
-    const {firstname,lastname,email,createpassword,confirmpassword}=req.body;
-
+    const {firstname,lastname,email,createPassword,confirmPassword,accountType,contactNumber,otp}=req.body;
+    if(!firstname || !lastname || !email || !createPassword || !confirmPassword || !otp){
+        return res.status(403).json({
+            success:false,
+            message:"All fields are required",
+        })
+    }
+    if(createPassword != confirmPassword){
+        return res.status(400).json({
+            success:false,
+            message:"CreatePassword and cnfPassword are not matching"
+        })
+    }
+    const recentOtp=(await OTP.find({email})).toSorted({createdAt:-1}).limit(1);
+    if(recentOtp.length ==0){
+        return res.status(400).json({
+            success:false,
+            message:"OTP found"
+        })
+    }
+    else if(otp !== recentOtp.otp){
+        return res.status(400).json({
+            success:false,
+            message:"Invalid OTP",
+        })
+    }
     const existingUser=User.findOne({email});
     if(existingUser){
         return res.status(400).json({
@@ -70,9 +95,16 @@ exports.signup=async(req,res)=>{
             message:"Error in hashing password",
         });
     }
+    const profileDetails=await Profiler.create({
+        gender:null,
+        dateOfBirth:null,
+        about:null,
+        contactNumber:null,
+    })
     try{
         const user=await User.create({
-            name,email,role,password:hashedPassword
+            firstname,lastname,email,contactNumber,password:hashedPassword,accountType,additionalDetails:profileDetails._id,
+            image:`dicebear pe ja kr api lao` 
         })
         return res.status(200).json({
             success:true,
