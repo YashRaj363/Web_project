@@ -57,22 +57,25 @@ exports.sendOTP = async (req,res)=>{
 
 //signup
 exports.signup = async (req,res)=>{
+
+    //fetch all the data from body pass by frontend
     const {firstname,lastname,email,createPassword,confirmPassword,accountType,contactNumber,otp} = req.body;
 
+    //validate all the fetch daTa i.e i have rerecieved all fields
     if(!firstname || !lastname || !email || !createPassword || !confirmPassword || !otp){
         return res.status(403).json({
             success:false,
             message:"All fields are required",
         })
     }
-
+    //check createpassword and cnfpassword matches
     if(createPassword != confirmPassword){
         return res.status(400).json({
             success:false,
             message:"CreatePassword and cnfPassword are not matching"
         })
     }
-
+    //check the otp given by user and otp saved in db matches
     const recentOtp = await OTP.find({email}).sort({createdAt:-1}).limit(1);
 
     if(recentOtp.length == 0){
@@ -87,7 +90,7 @@ exports.signup = async (req,res)=>{
             message:"Invalid OTP",
         })
     }
-
+    //pre-existing user checking
     const user = await User.findOne({email});
     if(user){
         return res.status(400).json({
@@ -95,7 +98,7 @@ exports.signup = async (req,res)=>{
             message:"User already Exist",
         })
     }
-
+    //password hashing
     let hashedPassword;
     try{
         hashedPassword = await bcrypt.hash(createPassword,10);
@@ -106,14 +109,14 @@ exports.signup = async (req,res)=>{
             message:"Error in hashing password",
         });
     }
-
+    //in User schema Additional deteails from profile so we do this
     const profileDetails = await Profile.create({
         gender:null,
         dateOfBirth:null,
         about:null,
         contactNumber:null,
     });
-
+    //update in db
     try{
         const newUser = await User.create({
             firstname,
