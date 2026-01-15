@@ -114,7 +114,7 @@ exports.signup = async (req,res)=>{
         gender:null,
         dateOfBirth:null,
         about:null,
-        contactNumber:null,
+        phone:null,
     });
     //update in db
     try{
